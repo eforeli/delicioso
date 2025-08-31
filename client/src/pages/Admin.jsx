@@ -7,7 +7,8 @@ import {
   CogIcon,
   PlusIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline'
 import api from '../utils/api'
 
@@ -278,6 +279,205 @@ function ProductManagement() {
   )
 }
 
+function OrderManagement() {
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [customers, setCustomers] = useState([])
+  const [showCustomers, setShowCustomers] = useState(false)
+
+  useEffect(() => {
+    fetchOrders()
+  }, [])
+
+  const fetchOrders = async () => {
+    try {
+      const response = await api.get('/admin/orders')
+      setOrders(response.data)
+    } catch (err) {
+      alert('載入訂單失敗')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await api.get('/admin/webhook/gas', {
+        data: { type: 'customer_export' }
+      })
+      setCustomers(response.data.data)
+      setShowCustomers(true)
+    } catch (err) {
+      alert('載入客戶資料失敗')
+    }
+  }
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await api.patch(`/orders/admin/${orderId}/status`, { status: newStatus })
+      alert('訂單狀態已更新')
+      fetchOrders()
+    } catch (err) {
+      alert('更新失敗')
+    }
+  }
+
+  const exportOrdersCSV = async () => {
+    try {
+      const response = await api.get('/admin/export/orders', {
+        responseType: 'blob'
+      })
+      
+      const blob = new Blob([response.data], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `訂單資料_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      alert('訂單資料已匯出！')
+    } catch (err) {
+      alert('匯出失敗')
+    }
+  }
+
+  const exportCustomersCSV = async () => {
+    try {
+      const response = await api.get('/admin/export/customers', {
+        responseType: 'blob'
+      })
+      
+      const blob = new Blob([response.data], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `客戶資料_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      alert('客戶資料已匯出！')
+    } catch (err) {
+      alert('匯出失敗')
+    }
+  }
+
+  const getStatusText = (status) => {
+    const statusMap = {
+      'pending': '待付款',
+      'paid': '已付款', 
+      'shipped': '已出貨',
+      'completed': '已完成',
+      'cancelled': '已取消'
+    }
+    return statusMap[status] || status
+  }
+
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'paid': 'bg-blue-100 text-blue-800',
+      'shipped': 'bg-purple-100 text-purple-800', 
+      'completed': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800'
+    }
+    return colorMap[status] || 'bg-gray-100 text-gray-800'
+  }
+
+  if (loading) {
+    return <div className="text-center py-8">載入中...</div>
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">訂單管理</h2>
+        <div className="flex space-x-3">
+          <button
+            onClick={exportOrdersCSV}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+            匯出訂單CSV
+          </button>
+          <button
+            onClick={exportCustomersCSV}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+            匯出客戶CSV
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">訂單</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">客戶</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">金額</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">狀態</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">轉帳末五碼</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">時間</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                      <div className="text-sm text-gray-500 truncate max-w-xs">{order.shipping_address}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{order.customer_name}</div>
+                      <div className="text-sm text-gray-500">{order.email}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">NT$ {order.total_amount}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                      {getStatusText(order.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">
+                    {order.payment_last_five || '-'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {new Date(order.created_at).toLocaleDateString('zh-TW')}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium">
+                    <select
+                      value={order.status}
+                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                      className="text-sm border rounded px-2 py-1"
+                    >
+                      <option value="pending">待付款</option>
+                      <option value="paid">已付款</option>
+                      <option value="shipped">已出貨</option>
+                      <option value="completed">已完成</option>
+                      <option value="cancelled">已取消</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AdminDashboard() {
   return (
     <div className="text-center py-12">
@@ -291,11 +491,11 @@ function AdminDashboard() {
           <p className="text-gray-600 text-sm">新增、編輯、管理商品</p>
         </Link>
         
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <Link to="/admin/orders" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
           <ClipboardDocumentListIcon className="w-12 h-12 text-blue-600 mx-auto mb-3" />
           <h3 className="text-lg font-semibold mb-2">訂單管理</h3>
-          <p className="text-gray-600 text-sm">處理客戶訂單</p>
-        </div>
+          <p className="text-gray-600 text-sm">處理客戶訂單與CSV匯出</p>
+        </Link>
         
         <div className="bg-white p-6 rounded-lg shadow-md">
           <UsersIcon className="w-12 h-12 text-green-600 mx-auto mb-3" />
@@ -348,6 +548,12 @@ function Admin() {
               >
                 商品管理
               </Link>
+              <Link 
+                to="/admin/orders" 
+                className="text-gray-600 hover:text-red-600 transition-colors"
+              >
+                訂單管理
+              </Link>
             </nav>
           </div>
         </div>
@@ -356,6 +562,7 @@ function Admin() {
       <Routes>
         <Route path="/" element={<AdminDashboard />} />
         <Route path="/products" element={<ProductManagement />} />
+        <Route path="/orders" element={<OrderManagement />} />
       </Routes>
     </div>
   )
