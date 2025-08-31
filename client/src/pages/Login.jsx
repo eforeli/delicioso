@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '../utils/api'
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -17,8 +17,9 @@ function Login() {
     setError('')
 
     try {
-      const response = await axios.post('/api/auth/login', formData)
+      const response = await api.post('/auth/login', formData)
       localStorage.setItem('token', response.data.token)
+      localStorage.setItem('user', JSON.stringify(response.data.user))
       navigate('/')
     } catch (err) {
       setError(err.response?.data?.message || '登入失敗')

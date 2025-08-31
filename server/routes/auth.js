@@ -11,7 +11,7 @@ router.post('/register', async (req, res) => {
     const { name, email, phone, birthDate } = req.body
 
     // 檢查用戶是否已存在
-    const existingUser = await query('SELECT id FROM users WHERE email = $1', [email])
+    const existingUser = await query('SELECT id FROM users WHERE email = ?', [email])
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: '此電子郵件已被註冊' })
     }
@@ -23,13 +23,19 @@ router.post('/register', async (req, res) => {
     // 創建用戶
     const result = await query(
       `INSERT INTO users (name, email, phone, birth_date, password) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email`,
+       VALUES (?, ?, ?, ?, ?)`,
       [name, email, phone, birthDate, hashedPassword]
     )
 
+    // 獲取剛創建的用戶信息
+    const newUser = await query(
+      'SELECT id, name, email FROM users WHERE email = ?',
+      [email]
+    )
+    
     res.status(201).json({ 
       message: '註冊成功', 
-      user: result.rows[0] 
+      user: newUser.rows[0] 
     })
   } catch (error) {
     console.error('註冊錯誤:', error)
@@ -44,7 +50,7 @@ router.post('/login', async (req, res) => {
 
     // 查找用戶
     const result = await query(
-      'SELECT id, name, email, password, role FROM users WHERE email = $1',
+      'SELECT id, name, email, password, role FROM users WHERE email = ?',
       [email]
     )
 
@@ -80,6 +86,32 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('登入錯誤:', error)
     res.status(500).json({ message: '服務器錯誤' })
+  }
+})
+
+// 獲取當前用戶資料
+router.get('/profile', async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '')
+    
+    if (!token) {
+      return res.status(401).json({ message: '缺少認證 token' })
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    const result = await query(
+      'SELECT id, name, email, phone, birth_date, role, created_at FROM users WHERE id = ?',
+      [decoded.userId]
+    )
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: '用戶不存在' })
+    }
+    
+    res.json({ user: result.rows[0] })
+  } catch (error) {
+    console.error('獲取用戶資料錯誤:', error)
+    res.status(401).json({ message: 'Token 無效' })
   }
 })
 
