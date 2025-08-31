@@ -291,7 +291,7 @@ function OrderManagement() {
 
   const fetchOrders = async () => {
     try {
-      const response = await api.get('/admin/orders')
+      const response = await api.get('/orders/admin/all')
       setOrders(response.data)
     } catch (err) {
       alert('載入訂單失敗')
@@ -302,8 +302,8 @@ function OrderManagement() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await api.get('/admin/webhook/gas', {
-        data: { type: 'customer_export' }
+      const response = await api.post('/admin/webhook/gas', {
+        type: 'customer_export'
       })
       setCustomers(response.data.data)
       setShowCustomers(true)
