@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url'
 
 import authRoutes from './routes/auth.js'
 import productRoutes from './routes/products.js'
+import cartRoutes from './routes/cart.js'
+import uploadRoutes from './routes/upload.js'
 import orderRoutes from './routes/orders.js'
 import adminRoutes from './routes/admin.js'
 
@@ -29,6 +31,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 // API 路由
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
+app.use('/api/cart', cartRoutes)
+app.use('/api/upload', uploadRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/admin', adminRoutes)
 
