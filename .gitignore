@@ -6,14 +6,35 @@ node_modules/
 .env
 .env.local
 .env.production
+.env.development
 
 # Build outputs
 client/dist/
 server/uploads/
+server/exports/
+
+# Database files
+server/database.sqlite
+server/database.db
+*.sqlite
+*.db
+
+# API Keys and Tokens
+server/config/keys.js
+server/config/secrets.js
+**/keys/**
+**/secrets/**
+
+# Google Apps Script sensitive data
+google-apps-script/config.js
+google-apps-script/credentials.json
+google-apps-script/.clasp.json
 
 # Logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Runtime data
 pids/
@@ -21,11 +42,22 @@ pids/
 *.seed
 *.pid.lock
 
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
 # Optional npm cache directory
 .npm
 
+# Optional eslint cache
+.eslintcache
+
 # Dependency directories
 jspm_packages/
+bower_components/
 
 # IDE
 .vscode/
@@ -42,3 +74,33 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# SSL certificates (if any)
+*.pem
+*.key
+*.crt
+*.cert
+
+# Local development overrides
+config/local.js
+config/local.json
+
+# JWT secrets and API keys
+jwt-secret.txt
+api-keys.txt
+
+# Backup files
+*.backup
+*.bak
+
+# Test artifacts
+test-results/
+*.tgz
+
+# Docker
+.dockerignore
+Dockerfile.dev
